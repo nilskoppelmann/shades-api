@@ -102,8 +102,72 @@ func ShadeShow(w http.ResponseWriter, r *http.Request) {
 
 func ShadeRand(w http.ResponseWriter, r *http.Request) {
 	// show a random shade
+	db, err := Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var res Shade
+
+	err = db.QueryRow("SELECT Id, Grey, Hex FROM shades ORDER BY RAND() LIMIT 1").Scan(&res.Id, &res.Grey, &res.Hex)
+
+	// http-headers
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err != nil {
+		//		log.Fatal("Hello", err)
+		errMsg := Error{Error: "Query was not successful", Time: time.Now()}
+
+		if err := json.NewEncoder(w).Encode(errMsg); err != nil {
+			panic(err)
+		}
+	} else {
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			panic(err)
+		}
+	}
 }
 
 func ShadesRand(w http.ResponseWriter, r *http.Request) {
 	// show a number of random shades
+	vars := mux.Vars(r)
+	RandAmount := vars["RandAmount"]
+	db, err := Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rows, err := db.Query("SELECT Id, Grey, Hex FROM shades ORDER BY RAND() LIMIT ?", RandAmount)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer rows.Close()
+	shades := []Shade{}
+	for rows.Next() {
+		var res Shade
+		err = rows.Scan(&res.Id, &res.Grey, &res.Hex)
+		if err != nil {
+			log.Fatal(err)
+		}
+		shades = append(shades, res)
+	}
+
+	// http-headers
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err != nil {
+		//		log.Fatal("Hello", err)
+		errMsg := Error{Error: "Query was not successful", Time: time.Now()}
+
+		if err := json.NewEncoder(w).Encode(errMsg); err != nil {
+			panic(err)
+		}
+	} else {
+		if err := json.NewEncoder(w).Encode(shades); err != nil {
+			panic(err)
+		}
+	}
 }
