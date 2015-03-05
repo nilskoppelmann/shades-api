@@ -13,12 +13,5 @@ func Connect() (*sql.DB, error) {
 		log.Fatal(err)
 	}
 
-	log.Print("accessing database")
-
 	return db, err
-}
-
-func Close(db *sql.DB) {
-	db.Close()
-	log.Print("database closed")
 }

@@ -2,18 +2,26 @@ package main
 
 import (
 	//	"database/sql"
-	//	"encoding/json"
-	"fmt"
+	"encoding/json"
+	"time"
+	//	"fmt"
 	"log"
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
-	//	"github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	// index
-	fmt.Fprintln(w, "Welcome to the shades!")
+	// index route
+	msg := Msg{Msg: "Welcome to the shades!", Time: time.Now()}
+	// http-headers
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(msg); err != nil {
+		panic(err)
+	}
 }
 
 func ShadesIndex(w http.ResponseWriter, r *http.Request) {
@@ -22,34 +30,74 @@ func ShadesIndex(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var (
-		Id  int
-		Hex string
-	)
 	// db query
-	rows, err := db.Query("SELECT Id, Hex FROM shades WHERE Grey = ?", 1)
+	rows, err := db.Query("SELECT Id, Grey, Hex FROM shades")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer rows.Close()
+	shades := []Shade{}
 	for rows.Next() {
-		err := rows.Scan(&Id, &Hex)
+		var r Shade
+		err = rows.Scan(&r.Id, &r.Grey, &r.Hex)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Fprintln(w, Id, Hex)
+		shades = append(shades, r)
 	}
+
+	// http-headers
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(shades); err != nil {
+		panic(err)
+	}
+
 	err = rows.Err()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//	db.Close()
-	Close(db)
+	db.Close()
 }
 
 func ShadeShow(w http.ResponseWriter, r *http.Request) {
 	// show a particular shade
+	vars := mux.Vars(r)
+	Pattern := vars["Pattern"]
+	FilterType := vars["FilterType"]
+	db, err := Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var res Shade
+
+	if FilterType == "id" {
+		err = db.QueryRow("SELECT Id, Grey, Hex FROM shades WHERE Id = ?", Pattern).Scan(&res.Id, &res.Grey, &res.Hex)
+	} else if FilterType == "hex" {
+		Pattern = "#" + Pattern
+		err = db.QueryRow("SELECT Id, Grey, Hex FROM shades WHERE Hex = ?", Pattern).Scan(&res.Id, &res.Grey, &res.Hex)
+	}
+
+	// http-headers
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
+	if err != nil {
+		//		log.Fatal("Hello", err)
+		errMsg := Error{Error: "Query was not successful", Time: time.Now()}
+
+		if err := json.NewEncoder(w).Encode(errMsg); err != nil {
+			panic(err)
+		}
+	} else {
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			panic(err)
+		}
+	}
 }
 
 func ShadeRand(w http.ResponseWriter, r *http.Request) {
@@ -58,8 +106,4 @@ func ShadeRand(w http.ResponseWriter, r *http.Request) {
 
 func ShadesRand(w http.ResponseWriter, r *http.Request) {
 	// show a number of random shades
-}
-
-func ShadeByHEX(w http.ResponseWriter, r *http.Request) {
-	// show a shade by certain category
 }

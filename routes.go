@@ -50,7 +50,7 @@ var routes = Routes{
 	Route{
 		"ShadeShow",
 		"GET",
-		"/shade/{ShadeId}",
+		"/shade/{FilterType}/{Pattern}",
 		ShadeShow,
 	},
 	Route{
@@ -62,13 +62,7 @@ var routes = Routes{
 	Route{
 		"ShadesRand",
 		"GET",
-		"/shades/rand",
+		"/shades/rand/{RandAmount}",
 		ShadesRand,
-	},
-	Route{
-		"ShadeByHEX",
-		"GET",
-		"/shade/hex/{ShadeHex}",
-		ShadeByHEX,
 	},
 }
