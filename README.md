@@ -4,7 +4,7 @@ A small JSON API written in Golang providing, well 50 shades of grey.
 
 #API doc
 
-Routes:
+Routes:  
 `/` Welcome Index  
 `/shades/` All shades  
 `/shades/rand/{amount}/` A number of random shades  
